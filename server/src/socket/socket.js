@@ -1,3 +1,5 @@
+import { containsBadWords, censorMessage, WARNING_MESSAGE } from "../utils/badWordsFilter.js";
+
 const activeUsers = new Map(); // Map userId to socket.id
 
 const socketHandler = (io) => {
@@ -16,8 +18,22 @@ const socketHandler = (io) => {
     // 1-on-1 Private Message
     socket.on("private_message", (data) => {
       const { senderId, receiverId, text, time, senderName } = data;
-      const receiverSocketId = activeUsers.get(receiverId);
 
+      // Check for bad words in private messages
+      if (containsBadWords(text)) {
+        // Send warning ONLY to sender
+        const senderSocketId = activeUsers.get(senderId);
+        if (senderSocketId) {
+          socket.emit("message_blocked", {
+            warning: WARNING_MESSAGE,
+            originalText: text
+          });
+        }
+        console.log(`⚠️ Private message BLOCKED from ${senderId}: "${text}"`);
+        return; // Don't deliver the message
+      }
+
+      const receiverSocketId = activeUsers.get(receiverId);
       console.log(`Private msg from ${senderId} to ${receiverId}: ${text}`);
 
       if (receiverSocketId) {
@@ -32,8 +48,19 @@ const socketHandler = (io) => {
       }
     });
 
-    // Global chat message (keeping it for later as requested)
+    // Global chat message — WITH BAD WORDS FILTER
     socket.on("send_message", (data) => {
+      // Check for bad words
+      if (containsBadWords(data.text)) {
+        // Send warning ONLY to sender (not to everyone)
+        socket.emit("message_blocked", {
+          warning: WARNING_MESSAGE,
+          originalText: data.text
+        });
+        console.log(`⚠️ Global message BLOCKED from ${data.username}: "${data.text}"`);
+        return; // Don't broadcast
+      }
+
       console.log("Global Message received:", data);
       io.emit("receive_message", data);
     });

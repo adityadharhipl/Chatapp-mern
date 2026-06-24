@@ -63,10 +63,18 @@ function App() {
       }));
     });
 
+    // Bad words filter — warning from server
+    socket.on('message_blocked', (data) => {
+      setError(data.warning);
+      // Auto clear warning after 5 seconds
+      setTimeout(() => setError(''), 5000);
+    });
+
     return () => {
       socket.off('online_users');
       socket.off('receive_message');
       socket.off('receive_private_message');
+      socket.off('message_blocked');
     };
   }, [currentUser]);
 
@@ -397,6 +405,13 @@ function App() {
             </div>
 
             <div className="p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-800">
+              {error && (
+                <div className="max-w-4xl mx-auto mb-3 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 animate-pulse">
+                  <span className="text-xl">⚠️</span>
+                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
+                  <button onClick={() => setError('')} className="ml-auto text-red-400 hover:text-red-600 text-lg font-bold">✕</button>
+                </div>
+              )}
               <form onSubmit={sendMessage} className="max-w-4xl mx-auto flex gap-3">
                 <input type="text" value={inputMessage} onChange={e => setInputMessage(e.target.value)} placeholder="Type a message..." className="flex-1 bg-slate-100 dark:bg-slate-800 border-none px-6 py-4 rounded-full text-base outline-none focus:ring-2 focus:ring-indigo-500/50" />
                 <button type="submit" disabled={!inputMessage.trim()} className="w-14 h-14 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 disabled:opacity-50">➤</button>
