@@ -45,7 +45,7 @@ const fallbackResponses = {
     "Why did the computer get cold? It left its Windows open."
   ],
 
-  general: [
+  gneeral: [
     "That's interesting!",
     "Tell me more.",
     "I'd love to hear your thoughts.",
