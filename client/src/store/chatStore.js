@@ -20,6 +20,7 @@ export const ChatProvider = ({ children }) => {
   
   const [globalMessages, setGlobalMessages] = useState([]);
   const [privateMessages, setPrivateMessages] = useState({});
+  const [isAiTyping, setIsAiTyping] = useState(false);
 
   useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
@@ -42,11 +43,13 @@ export const ChatProvider = ({ children }) => {
         [chatPartnerId]: [...(prev[chatPartnerId] || []), data]
       }));
     });
+    socket.on('aiTyping', setIsAiTyping);
 
     return () => {
       socket.off('online_users');
       socket.off('receive_message');
       socket.off('receive_private_message');
+      socket.off('aiTyping');
     };
   }, [currentUser]);
 
@@ -125,7 +128,7 @@ export const ChatProvider = ({ children }) => {
         token, currentUser, theme, toggleTheme,
         activeTab, setActiveTab, activeChatUser, setActiveChatUser,
         onlineUsers, friends, allUsers, friendRequests,
-        globalMessages, privateMessages,
+        globalMessages, privateMessages, isAiTyping,
         fetchUsers, fetchFriends, fetchRequests, fetchPrivateMessages,
         login, logout
       }

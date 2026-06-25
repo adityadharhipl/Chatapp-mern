@@ -34,6 +34,7 @@ function App() {
   const [globalMessages, setGlobalMessages] = useState([]);
   const [privateMessages, setPrivateMessages] = useState({});
   const [inputMessage, setInputMessage] = useState('');
+  const [isAiTyping, setIsAiTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Theme Logic
@@ -63,11 +64,24 @@ function App() {
       }));
     });
 
-    // Bad words filter — warning from server
     socket.on('message_blocked', (data) => {
       setError(data.warning);
       // Auto clear warning after 5 seconds
       setTimeout(() => setError(''), 5000);
+    });
+
+    socket.on('aiTyping', (status) => setIsAiTyping(status));
+    socket.on('global_message_deleted', (msgId) => {
+      setGlobalMessages(prev => prev.filter(m => m._id !== msgId));
+    });
+    socket.on('message_deleted', ({ msgId, chatId }) => {
+      setPrivateMessages(prev => {
+        if (!prev[chatId]) return prev;
+        return {
+          ...prev,
+          [chatId]: prev[chatId].filter(m => m._id !== msgId)
+        };
+      });
     });
 
     return () => {
@@ -75,13 +89,16 @@ function App() {
       socket.off('receive_message');
       socket.off('receive_private_message');
       socket.off('message_blocked');
+      socket.off('aiTyping');
+      socket.off('global_message_deleted');
+      socket.off('message_deleted');
     };
   }, [currentUser]);
 
   // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [globalMessages, privateMessages, activeChatUser, activeTab]);
+  }, [globalMessages, privateMessages, activeChatUser, activeTab, isAiTyping]);
 
   // Fetch Data when logged in
   useEffect(() => {
@@ -123,8 +140,8 @@ function App() {
       const res = await fetch(`${API_URL}/messages/${friendId}`, { headers: authHeaders });
       if (res.ok) {
         const data = await res.json();
-        // The API returns MongoDB message objects. Let's map them to match our socket format
         const formattedMsgs = data.map(msg => ({
+          _id: msg._id,
           senderId: msg.sender,
           receiverId: msg.receiver,
           text: msg.text,
@@ -210,6 +227,7 @@ function App() {
     if (!inputMessage.trim()) return;
 
     const messageData = {
+      _id: Date.now().toString(),
       text: inputMessage,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
@@ -233,9 +251,11 @@ function App() {
         });
 
         if (res.ok) {
+          const savedMsg = await res.json();
           // Then emit to socket for real-time delivery
           socket.emit('private_message', {
             ...messageData,
+            _id: savedMsg._id,
             text: textToSave,
             senderId: currentUser._id,
             senderName: currentUser.name,
@@ -243,6 +263,26 @@ function App() {
           });
         }
       } catch (e) { console.error("Error saving message", e); }
+    }
+  };
+
+  const deleteMessage = async (msgId) => {
+    if (activeTab === 'global') {
+      socket.emit('delete_global_message', msgId);
+    } else {
+      try {
+        const res = await fetch(`${API_URL}/messages/${msgId}`, {
+          method: 'DELETE',
+          headers: authHeaders
+        });
+        if (res.ok) {
+          setPrivateMessages(prev => {
+            const updated = prev[activeChatUser._id].filter(m => m._id !== msgId);
+            return { ...prev, [activeChatUser._id]: updated };
+          });
+          socket.emit('delete_private_message', { msgId, receiverId: activeChatUser._id, senderId: currentUser._id });
+        }
+      } catch (e) { console.error("Error deleting message", e); }
     }
   };
 
@@ -380,8 +420,20 @@ function App() {
         {((activeTab === 'chats' && activeChatUser) || activeTab === 'global') ? (
           <>
             <div className="h-16 px-6 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center shadow-sm shrink-0">
-              <div className="font-bold text-lg">
-                {activeTab === 'global' ? '🌍 Global Room' : `💬 ${activeChatUser.name}`}
+              <div className="font-bold text-lg flex items-center gap-2">
+                {activeTab === 'global' ? (
+                  <>
+                    🌍 Global Room
+                    <span className="text-xs font-bold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-full border border-indigo-200 dark:border-indigo-800 ml-2">🤖 AI Available</span>
+                  </>
+                ) : (
+                  <div className="flex flex-col">
+                    <span>💬 {activeChatUser.name}</span>
+                    <span className="text-xs font-normal text-slate-500">
+                      {onlineUsers.includes(activeChatUser._id) ? 'Online' : (activeChatUser.lastSeen ? 'Last seen ' + new Date(activeChatUser.lastSeen).toLocaleString() : 'Offline')}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -390,16 +442,40 @@ function App() {
                 {(activeTab === 'global' ? globalMessages : (privateMessages[activeChatUser?._id] || [])).map((msg, idx) => {
                   const isOwn = activeTab === 'global' ? msg.username === currentUser.name : msg.senderId === currentUser._id;
                   const displayName = activeTab === 'global' ? msg.username : msg.senderName;
+                  const isAI = msg.isAI;
                   return (
-                    <div key={idx} className={`flex flex-col max-w-[70%] ${isOwn ? 'self-end' : 'self-start'}`}>
-                      <div className={`px-4 py-3 rounded-2xl ${isOwn ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-100 dark:border-slate-700 rounded-bl-sm'}`}>
-                        {!isOwn && <span className="text-xs font-bold block mb-1 opacity-70 text-indigo-600 dark:text-indigo-400">{displayName}</span>}
+                    <div key={idx} className={`flex flex-col max-w-[70%] group ${isOwn ? 'self-end' : 'self-start'}`}>
+                      <div className={`px-4 py-3 rounded-2xl relative ${isOwn ? 'bg-indigo-600 text-white rounded-br-sm' : (isAI ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-900 dark:text-emerald-100 shadow-sm border border-emerald-200 dark:border-emerald-800 rounded-bl-sm' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-100 dark:border-slate-700 rounded-bl-sm')}`}>
+                        {!isOwn && (
+                          isAI ? (
+                            <span className="text-xs font-bold block mb-1 opacity-70 flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                              <span className="text-sm">🤖</span> {displayName || "AI Assistant"}
+                            </span>
+                          ) : (
+                            <span className="text-xs font-bold block mb-1 opacity-70 text-indigo-600 dark:text-indigo-400">{displayName}</span>
+                          )
+                        )}
                         <p className="text-[15px]">{msg.text}</p>
+                        {isOwn && msg._id && (
+                          <button onClick={() => deleteMessage(msg._id)} className="absolute top-2 right-2 text-white/50 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" title="Delete Message">
+                            ✕
+                          </button>
+                        )}
                       </div>
                       <span className={`text-[10px] text-slate-400 mt-1 ${isOwn ? 'text-right' : 'text-left ml-2'}`}>{msg.time}</span>
                     </div>
                   )
                 })}
+                {isAiTyping && activeTab === 'global' && (
+                  <div className="flex flex-col max-w-[70%] self-start">
+                    <div className="px-4 py-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-900 dark:text-emerald-100 shadow-sm border border-emerald-200 dark:border-emerald-800 rounded-bl-sm">
+                      <span className="text-xs font-bold block mb-1 opacity-70 flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                        <span className="text-sm">🤖</span> AI Assistant
+                      </span>
+                      <p className="text-[15px] italic opacity-75">AI is typing...</p>
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
             </div>

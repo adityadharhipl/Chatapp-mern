@@ -5,7 +5,8 @@ from "../../middleware/auth.middleware.js";
 
 import {
  sendMessage,
- getMessages
+ getMessages,
+ deleteMessage
 }
 from "./message.controller.js";
 
@@ -22,6 +23,12 @@ router.get(
  "/:receiverId",
  protect,
  getMessages
+);
+
+router.delete(
+ "/:id",
+ protect,
+ deleteMessage
 );
 
 export default router;

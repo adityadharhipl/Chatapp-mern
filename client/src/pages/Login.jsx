@@ -43,6 +43,7 @@ const Login = () => {
   };
 
   return (
+    <>
     <div className="min-h-screen w-full flex items-center justify-center bg-slate-100 dark:bg-slate-900 transition-colors font-sans">
       <ThemeToggle theme={useChatStore().theme} toggleTheme={useChatStore().toggleTheme} />
       <div className="w-full max-w-md p-8 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700">
@@ -59,7 +60,7 @@ const Login = () => {
           <div className="relative">
             <input type={showPassword ? "text" : "password"} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full pl-4 pr-12 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white outline-none focus:border-indigo-500" />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-indigo-500">
-              {showPassword ? '👁️' : '👁️‍🗨️'}
+              {showPassword ? '' : '👁️‍🗨️'}
             </button>
           </div>
           
@@ -67,7 +68,7 @@ const Login = () => {
             <div className="relative">
               <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm Password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className="w-full pl-4 pr-12 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white outline-none focus:border-indigo-500" />
               <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-indigo-500">
-                {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                {showConfirmPassword ? '' : '👁️‍🗨️'}
               </button>
             </div>
           )}
@@ -83,6 +84,7 @@ const Login = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
