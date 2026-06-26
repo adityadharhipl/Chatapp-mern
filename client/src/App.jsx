@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const SOCKET_URL = import.meta.env.PROD ? (import.meta.env.VITE_SOCKET_URL || window.location.origin) : 'http://localhost:5000';
+const API_URL = import.meta.env.PROD ? (import.meta.env.VITE_API_URL || `${window.location.origin}/api`) : 'http://localhost:5000/api';
+
+const socket = io(SOCKET_URL);
 
 function App() {
   // Auth state
