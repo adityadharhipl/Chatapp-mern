@@ -11,7 +11,7 @@ function App() {
 
   // UI State
   const [view, setView] = useState('login');
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [activeTab, setActiveTab] = useState('chats');
   const [activeChatUser, setActiveChatUser] = useState(null);
 
@@ -39,11 +39,15 @@ function App() {
 
   // Theme Logic
   useEffect(() => {
-    if (theme === 'dark') document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
   // Register Socket when logged in
   useEffect(() => {
@@ -310,25 +314,25 @@ function App() {
 
   if (!token) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-[#111111] font-sans p-4 md:p-8 relative">
+      <div className="min-h-screen w-full flex items-center justify-center bg-slate-100 dark:bg-[#111111] font-sans p-4 md:p-8 relative">
         <ThemeToggle />
         
-        <div className="w-full max-w-5xl bg-white rounded-[2rem] md:rounded-[2.5rem] flex flex-col md:flex-row shadow-2xl min-h-[600px] overflow-hidden relative z-10">
+        <div className="w-full max-w-5xl bg-white dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] flex flex-col md:flex-row shadow-2xl min-h-[600px] overflow-hidden relative z-10">
           
           {/* Left Side: Form */}
-          <div className="w-full md:w-1/2 p-8 md:p-14 lg:p-16 flex flex-col justify-center relative bg-white">
+          <div className="w-full md:w-1/2 p-8 md:p-14 lg:p-16 flex flex-col justify-center relative bg-white dark:bg-slate-800">
             <div className="max-w-md w-full mx-auto">
-              <h1 className="text-[32px] font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <h1 className="text-[32px] font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
                 {view === 'login' ? 'Welcome Back' : 'Register'} <span className="text-3xl">👋</span>
               </h1>
-              <p className="text-slate-500 mb-8 text-[15px] leading-relaxed pr-4">
+              <p className="text-slate-500 dark:text-slate-400 mb-8 text-[15px] leading-relaxed pr-4">
                 {view === 'login' 
                   ? "Today is a new day. It's your day. You shape it. Sign in to start chatting with your friends."
                   : "Today is a new day. It's your day. You shape it. Sign up to start chatting with your friends."}
               </p>
 
               {error && (
-                <div className="mb-6 text-red-500 text-center bg-red-50 border border-red-100 py-3 px-4 rounded-xl text-sm font-medium">
+                <div className="mb-6 text-red-500 dark:text-red-400 text-center bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 py-3 px-4 rounded-xl text-sm font-medium">
                   {error}
                 </div>
               )}
@@ -336,23 +340,23 @@ function App() {
               <form onSubmit={handleAuth} className="space-y-4">
                 {view === 'register' && (
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 block">Full Name</label>
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block">Full Name</label>
                     <input type="text" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} required 
-                      className="w-full px-4 py-3.5 rounded-xl bg-[#f8fafc] border border-[#e2e8f0] text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all placeholder:text-slate-400 text-[15px]" />
+                      className="w-full px-4 py-3.5 rounded-xl bg-[#f8fafc] dark:bg-slate-700 border border-[#e2e8f0] dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-400 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[15px]" />
                   </div>
                 )}
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700 block">Email</label>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block">Email</label>
                   <input type="email" placeholder="Example@email.com" value={email} onChange={e => setEmail(e.target.value)} required 
-                    className="w-full px-4 py-3.5 rounded-xl bg-[#f8fafc] border border-[#e2e8f0] text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all placeholder:text-slate-400 text-[15px]" />
+                    className="w-full px-4 py-3.5 rounded-xl bg-[#f8fafc] dark:bg-slate-700 border border-[#e2e8f0] dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-400 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[15px]" />
                 </div>
                 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700 block">Password</label>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block">Password</label>
                   <div className="relative">
                     <input type={showPassword ? "text" : "password"} placeholder="At least 8 characters" value={password} onChange={e => setPassword(e.target.value)} required 
-                      className="w-full px-4 py-3.5 rounded-xl bg-[#f8fafc] border border-[#e2e8f0] text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all placeholder:text-slate-400 pr-12 text-[15px]" />
+                      className="w-full px-4 py-3.5 rounded-xl bg-[#f8fafc] dark:bg-slate-700 border border-[#e2e8f0] dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-400 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 pr-12 text-[15px]" />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                       {showPassword ? '🫣' : '👁️'}
                     </button>
@@ -361,10 +365,10 @@ function App() {
                 
                 {view === 'register' && (
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 block">Confirm Password</label>
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block">Confirm Password</label>
                     <div className="relative">
                       <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm your password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required 
-                        className="w-full px-4 py-3.5 rounded-xl bg-[#f8fafc] border border-[#e2e8f0] text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all placeholder:text-slate-400 pr-12 text-[15px]" />
+                        className="w-full px-4 py-3.5 rounded-xl bg-[#f8fafc] dark:bg-slate-700 border border-[#e2e8f0] dark:border-slate-600 text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-400 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 pr-12 text-[15px]" />
                       <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                         {showConfirmPassword ? '🫣' : '👁️'}
                       </button>
@@ -378,7 +382,7 @@ function App() {
                   </div>
                 )} */}
                 
-                <button type="submit" className="w-full py-3.5 bg-[#1e293b] hover:bg-[#0f172a] text-white rounded-xl font-medium transition-all text-[15px] shadow-md shadow-slate-200">
+                <button type="submit" className="w-full py-3.5 bg-[#1e293b] hover:bg-[#0f172a] dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-xl font-medium transition-all text-[15px] shadow-md shadow-slate-200 dark:shadow-none">
                   {view === 'login' ? 'Login' : 'Register'}
                 </button>
               </form>
@@ -400,7 +404,7 @@ function App() {
                 </button>
               </div> */}
 
-              <div className="mt-8 text-center text-[15px] text-slate-500">
+              <div className="mt-8 text-center text-[15px] text-slate-500 dark:text-slate-400">
                 {view === 'login' ? "Don't have an account?" : "Already have an account?"}
                 <button onClick={() => { setView(view === 'login' ? 'register' : 'login'); setError(''); }} className="ml-1.5 text-blue-600 hover:underline font-medium">
                   {view === 'login' ? 'Register' : 'Login'}
