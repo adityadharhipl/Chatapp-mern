@@ -10,7 +10,8 @@ from "./modules/user/user.routes.js";
 import messageRoutes
 from "./modules/message/message.routes.js";
 
-
+import groupRoutes
+from "./modules/group/group.routes.js";
 
 
 const app = express();
@@ -32,6 +33,11 @@ app.use(
 app.use(
  "/api/messages",
  messageRoutes
+);
+
+app.use(
+  "/api/groups",
+  groupRoutes
 );
 
 export default app;

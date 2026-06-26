@@ -53,6 +53,31 @@ const socketHandler = (io) => {
       // NOTE: AI is NOT available in private chats. AI only works in Global chat.
     });
 
+    // --- Group Chat ---
+    socket.on("join_group", (groupId) => {
+      socket.join(`group_${groupId}`);
+      console.log(`Socket ${socket.id} joined group ${groupId}`);
+    });
+
+    socket.on("leave_group", (groupId) => {
+      socket.leave(`group_${groupId}`);
+    });
+
+    socket.on("group_message", (data) => {
+      const { groupId, senderId, senderName, text, time, _id } = data;
+
+      if (containsBadWords(text)) {
+        socket.emit("message_blocked", {
+          warning: WARNING_MESSAGE,
+          originalText: text
+        });
+        return;
+      }
+
+      // Broadcast to all group members (including sender)
+      io.to(`group_${groupId}`).emit("receive_group_message", data);
+    });
+
     // Global chat message — WITH BAD WORDS FILTER
     socket.on("send_message", async (data) => {
       // Check for bad words
