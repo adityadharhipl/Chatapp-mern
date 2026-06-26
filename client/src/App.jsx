@@ -131,7 +131,12 @@ function App() {
   const fetchRequests = async () => {
     try {
       const res = await fetch(`${API_URL}/users/requests`, { headers: authHeaders });
-      if (res.ok) setFriendRequests(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        // Sort newest requests to the top
+        const sorted = data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        setFriendRequests(sorted);
+      }
     } catch (e) { console.error(e); }
   };
 
@@ -185,10 +190,20 @@ function App() {
 
       if (!res.ok) throw new Error(data.message || 'Authentication failed');
 
-      setToken(data.token);
-      setCurrentUser(data);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data));
+      if (view === 'login') {
+        // Only login sets token and navigates to dashboard
+        setToken(data.token);
+        setCurrentUser(data);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data));
+      } else {
+        // Registration success → redirect to login page
+        setError('✅ Registration successful! Please login now.');
+        setName('');
+        setPassword('');
+        setConfirmPassword('');
+        setView('login');
+      }
 
     } catch (err) {
       setError(err.message);
@@ -304,7 +319,7 @@ function App() {
           <div className="w-full md:w-1/2 p-8 md:p-14 lg:p-16 flex flex-col justify-center relative bg-white">
             <div className="max-w-md w-full mx-auto">
               <h1 className="text-[32px] font-bold text-slate-900 mb-3 flex items-center gap-2">
-                {view === 'login' ? 'Welcome Back' : 'Create Account'} <span className="text-3xl">👋</span>
+                {view === 'login' ? 'Welcome Back' : 'Register'} <span className="text-3xl">👋</span>
               </h1>
               <p className="text-slate-500 mb-8 text-[15px] leading-relaxed pr-4">
                 {view === 'login' 
@@ -364,7 +379,7 @@ function App() {
                 )} */}
                 
                 <button type="submit" className="w-full py-3.5 bg-[#1e293b] hover:bg-[#0f172a] text-white rounded-xl font-medium transition-all text-[15px] shadow-md shadow-slate-200">
-                  {view === 'login' ? 'Sign in' : 'Sign up'}
+                  {view === 'login' ? 'Login' : 'Register'}
                 </button>
               </form>
 {/* 
@@ -386,9 +401,9 @@ function App() {
               </div> */}
 
               <div className="mt-8 text-center text-[15px] text-slate-500">
-                {view === 'login' ? "Don't you have an account?" : "Already have an account?"}
+                {view === 'login' ? "Don't have an account?" : "Already have an account?"}
                 <button onClick={() => { setView(view === 'login' ? 'register' : 'login'); setError(''); }} className="ml-1.5 text-blue-600 hover:underline font-medium">
-                  {view === 'login' ? 'Sign up' : 'Sign in'}
+                  {view === 'login' ? 'Register' : 'Login'}
                 </button>
               </div>
               

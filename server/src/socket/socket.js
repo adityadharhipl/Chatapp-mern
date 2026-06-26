@@ -50,43 +50,7 @@ const socketHandler = (io) => {
         io.to(senderSocketId).emit("receive_private_message", data);
       }
 
-      // --- AI Chatbot Integration for Private Chat ---
-      const textTrimmed = text.trim();
-      const textLower = textTrimmed.toLowerCase();
-      
-      let prompt = textTrimmed;
-      if (textLower === "@ai" || textLower.startsWith("@ai ")) {
-        prompt = textLower.startsWith("@ai ") ? textTrimmed.substring(4).trim() : "Hello!";
-      }
-      
-      if (prompt) {
-        const aiResponse = await getAIResponse(prompt);
-        
-        // To make sure the AI response shows up in the same chat window for both users:
-        // For the sender, the chat window is identified by receiverId.
-        // For the receiver, the chat window is identified by senderId.
-        
-        const aiDataForSender = {
-          senderId: receiverId, // Group it under the friend's chat window
-          receiverId: senderId,
-          senderName: "AI Assistant",
-          text: aiResponse,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isAI: true
-        };
-        
-        const aiDataForReceiver = {
-          senderId: senderId, // Group it under the sender's chat window
-          receiverId: receiverId,
-          senderName: "AI Assistant",
-          text: aiResponse,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isAI: true
-        };
-        
-        if (senderSocketId) io.to(senderSocketId).emit("receive_private_message", aiDataForSender);
-        if (receiverSocketId) io.to(receiverSocketId).emit("receive_private_message", aiDataForReceiver);
-      }
+      // NOTE: AI is NOT available in private chats. AI only works in Global chat.
     });
 
     // Global chat message — WITH BAD WORDS FILTER
